@@ -1,7 +1,7 @@
 <?php
 session_start();
-$communikat = $_SESSION['communikat'] ?? '';
-unset($_SESSION['communikat']);
+$communicate = $_SESSION['communicate'] ?? '';
+unset($_SESSION['communicate']);
 
 if(!isset($_SESSION['users'])){
 $_SESSION['users'] = $_SESSION['users'] ?? [
@@ -20,9 +20,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['login'])) {
     $password = $_POST['password'];
 
     if (!isset($_SESSION['users'][$username])) {
-        $communikat = "Błąd: użytkownik nie istnieje";
+        $communicate = "Błąd: użytkownik nie istnieje";
     } elseif ($_SESSION['users'][$username]['password'] !== $password) {
-        $communikat ="Błąd: niepoprawne hasło.";
+        $communicate ="Błąd: niepoprawne hasło.";
     } else {
         $_SESSION['username'] = $username;
         $_SESSION['balance'] = $_SESSION['users'][$username]['balance'];
@@ -42,7 +42,7 @@ if (isset($_GET['logout'])) {
 
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['transfer'])) {
     if (!isset($_SESSION['username']) || isset($_SESSION['logged_out'])) {
-        $communikat = "Musisz się zalogować!";
+        $communicate = "Musisz się zalogować!";
     } else {
         $amount = (float) $_POST['amount'];
         $recipient = $_POST['recipient'];
@@ -52,9 +52,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['transfer'])) {
             $users[$sender]['balance'] -= $amount;
             $users[$recipient]['balance'] += $amount;
             $_SESSION['balance'] = $users[$sender]['balance'];
-            $communikat = "Przelew na $amount PLN do $recipient wykonany!";
+            $communicate = "Przelew na $amount PLN do $recipient wykonany!";
         } else {
-            $communikat = "Błąd przelewu: sprawdź saldo lub dane odbiorcy.";
+            $communicate = "Błąd przelewu: sprawdź saldo lub dane odbiorcy.";
         }
     }
 }
@@ -88,9 +88,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['transfer'])) {
 
     <h1>Bank Online</h1>
 
-    <?php if (!empty($communikat)): ?>
+    <?php if (!empty($communicate)): ?>
   <div class="alert alert-info mt-3">
-    <?= htmlspecialchars($communikat) ?>
+    <?= htmlspecialchars($communicate) ?>
   </div>
   <?php endif; ?>
 
@@ -112,7 +112,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['transfer'])) {
   </div>
 
   <div class="text-center mt-3">
-    <button type="submit" name="login">Zaloguj</button>
+    <button type="submit" name="login" class="btn-success">Zaloguj</button>
   </div>
 </form>
 

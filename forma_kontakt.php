@@ -12,7 +12,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['contact'])) {
 
     $tematFinalny = ($temat === 'Inne' && !empty($innyTemat)) ? $innyTemat : $temat;
 
-    $_SESSION['communikat'] = "Dziękujemy za wiadomość, $imie!";
+    $_SESSION['communicate'] = "Dziękujemy za wiadomość, $imie!";
     header("Location: main.php");
     exit;
 }
@@ -56,7 +56,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['contact'])) {
               <option value="" disabled selected>Wybierz temat...</option>
               <option value="Błąd">Błąd</option>
               <option value="Problemy z logowaniem">Problemy z logowaniem</option>
-              <option value="Cyberatak">Cyberatak</option>
+              <option value="Cyberattack">Cyberattack</option>
               <option value="Współpraca">Współpraca</option>
               <option value="Inne">Inne</option>
             </select>
