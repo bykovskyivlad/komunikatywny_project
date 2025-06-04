@@ -1,7 +1,7 @@
 <?php
 try {
     $pdo = new PDO(
-        "pgsql:host=127.0.0.1;port=5432;dbname=bank_project",
+        "pgsql:host=127.0.0.1;port=5432;dbname=bankowa_app",
         "postgres",        
         "08052023v&S"      
     );

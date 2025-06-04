@@ -4,43 +4,43 @@ session_start();
 
 // Sprawdź, czy użytkownik jest zalogowany
 if (!isset($_SESSION['username'])) {
-    header("Location: main.php");
-    exit;
+  header("Location: main.php");
+  exit;
 }
 
 $communicate = '';
 
 // Obsługa formularza przelewu
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['transfer'])) {
-    $recipientAccount = $_POST['recipient'];
-    $amount = (float) $_POST['amount'];
-    $desc = $_POST['description'] ?? '';
-    $recipientName = $_POST['recipient_name'];
-    $recipientSurname = $_POST['recipient_surname'];
+  $recipientAccount = $_POST['recipient'];
+  $amount = (float) $_POST['amount'];
+  $desc = $_POST['description'] ?? '';
+  $recipientName = $_POST['recipient_name'];
+  $recipientSurname = $_POST['recipient_surname'];
 
-    if ($amount <= 0) {
-        $communicate = "Kwota przelewu musi być większa niż 0.";
+  if ($amount <= 0) {
+    $communicate = "Kwota przelewu musi być większa niż 0.";
+  } else {
+    $stmt = $pdo->prepare("SELECT konto_id, saldo FROM konta WHERE numer_konta = :numer_konta");
+    $stmt->execute(['numer_konta' => $recipientAccount]);
+    $recipient = $stmt->fetch(PDO::FETCH_ASSOC);
+
+    if (!$recipient) {
+      $communicate = "Nie znaleziono odbiorcy o podanym numerze konta.";
+    } elseif ($amount > $_SESSION['saldo']) {
+      $communicate = "Brak wystarczających środków na koncie.";
     } else {
-        $stmt = $pdo->prepare("SELECT konto_id, saldo FROM konta WHERE numer_konta = :numer_konta");
-        $stmt->execute(['numer_konta' => $recipientAccount]);
-        $recipient = $stmt->fetch(PDO::FETCH_ASSOC);
+      // Przelew
+      $pdo->beginTransaction();
 
-        if (!$recipient) {
-            $communicate = "Nie znaleziono odbiorcy o podanym numerze konta.";
-        } elseif ($amount > $_SESSION['saldo']) {
-            $communicate = "Brak wystarczających środków na koncie.";
-        } else {
-            // Przelew
-            $pdo->beginTransaction();
+      $stmt = $pdo->prepare("UPDATE konta SET saldo = saldo - :kwota WHERE konto_id = :konto_id");
+      $stmt->execute(['kwota' => $amount, 'konto_id' => $_SESSION['konto_id']]);
 
-            $stmt = $pdo->prepare("UPDATE konta SET saldo = saldo - :kwota WHERE konto_id = :konto_id");
-            $stmt->execute(['kwota' => $amount, 'konto_id' => $_SESSION['konto_id']]);
+      $stmt = $pdo->prepare("UPDATE konta SET saldo = saldo + :kwota WHERE konto_id = :konto_id");
+      $stmt->execute(['kwota' => $amount, 'konto_id' => $recipient['konto_id']]);
 
-            $stmt = $pdo->prepare("UPDATE konta SET saldo = saldo + :kwota WHERE konto_id = :konto_id");
-            $stmt->execute(['kwota' => $amount, 'konto_id' => $recipient['konto_id']]);
-
-            $stmt = $pdo->prepare("
-                INSERT INTO historia_transakcji (
+      $stmt = $pdo->prepare("
+                INSERT INTO transakcji (
                     nadawca_id, odbiorca_id, numer_konta_nadawcy, numer_konta_odbiorcy,
                     kwota, typ, data_transakcji, opis
                 ) VALUES (
@@ -48,30 +48,36 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['transfer'])) {
                     :kwota, 'przelew', NOW(), :opis
                 )
             ");
-            $stmt->execute([
-                'nadawca_id' => $_SESSION['konto_id'],
-                'odbiorca_id' => $recipient['konto_id'],
-                'numer_nadawcy' => $_SESSION['konto_id'],
-                'numer_odbiorcy' => $recipientAccount,
-                'kwota' => $amount,
-                'opis' => $desc
-            ]);
+      $stmt->execute([
+        'nadawca_id' => $_SESSION['konto_id'],
+        'odbiorca_id' => $recipient['konto_id'],
+        'numer_nadawcy' => $_SESSION['konto_id'],
+        'numer_odbiorcy' => $recipientAccount,
+        'kwota' => $amount,
+        'opis' => $desc
+      ]);
 
-            $pdo->commit();
-            $_SESSION['saldo'] -= $amount;
-            $communicate = "Przelew na {$amount} PLN wykonany pomyślnie.";
-        }
+      $pdo->commit();
+      $_SESSION['saldo'] -= $amount;
+      $communicate = "Przelew na {$amount} PLN wykonany pomyślnie.";
     }
+  }
 }
 ?>
 <!DOCTYPE html>
 <html lang="pl">
+
 <head>
   <meta charset="UTF-8">
   <title>Przelew | Bank Online</title>
-  <link rel="stylesheet" href="style.scss?v=3">
+  <link rel="stylesheet" href="style.css?v=3">
+  <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
 </head>
+
 <body>
+  <a href="main.php" class="back-arrow">
+    <i class='bx bx-arrow-back'></i>
+  </a>
   <div class="centered-wrapper">
     <div class="container">
       <h2 class="text-center">Wykonaj przelew</h2>
@@ -111,11 +117,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['transfer'])) {
         <div class="text-center">
           <button type="submit" name="transfer" class="btn-success">Wykonaj przelew</button>
         </div>
-        <div class="text-center mt-3">
-         <a href="main.php" class="btn-outline-primary">← Powrót do strony głównej</a>
-        </div>
       </form>
     </div>
   </div>
 </body>
+
 </html>
