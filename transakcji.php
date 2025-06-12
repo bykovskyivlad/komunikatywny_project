@@ -2,7 +2,7 @@
 require_once 'db.php';
 session_start();
 
-// Sprawdź, czy użytkownik jest zalogowany
+
 if (!isset($_SESSION['username'])) {
   header("Location: main.php");
   exit;
@@ -10,7 +10,7 @@ if (!isset($_SESSION['username'])) {
 
 $communicate = '';
 
-// Obsługa formularza przelewu
+
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['transfer'])) {
   $recipientAccount = $_POST['recipient'];
   $amount = (float) $_POST['amount'];
@@ -30,7 +30,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['transfer'])) {
     } elseif ($amount > $_SESSION['saldo']) {
       $communicate = "Brak wystarczających środków na koncie.";
     } else {
-      // Przelew
+      
       $pdo->beginTransaction();
 
       $stmt = $pdo->prepare("UPDATE konta SET saldo = saldo - :kwota WHERE konto_id = :konto_id");
